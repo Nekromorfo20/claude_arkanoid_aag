@@ -51,6 +51,15 @@ const ball = {
   dy: -BALL_SPEED,
 };
 
+let lives = 3;
+
+function resetBall() {
+  ball.x = canvas.width / 2;
+  ball.y = paddle.y - ball.radius;
+  ball.dx = BALL_SPEED;
+  ball.dy = -BALL_SPEED;
+}
+
 function updateBall() {
   ball.x += ball.dx;
   ball.y += ball.dy;
@@ -67,6 +76,112 @@ function updateBall() {
     ball.y = ball.radius;
     ball.dy *= -1;
   }
+
+  checkPaddleCollision();
+  checkBrickCollision();
+
+  if ( ball.y - ball.radius > canvas.height ) {
+    lives -= 1;
+    if ( lives <= 0 ) lives = 3;
+    resetBall();
+  }
+}
+
+const MAX_BOUNCE_ANGLE = Math.PI / 3; // 60°
+
+function checkPaddleCollision() {
+  const withinX = ball.x + ball.radius > paddle.x && ball.x - ball.radius < paddle.x + paddle.width;
+  const withinY = ball.y + ball.radius > paddle.y && ball.y - ball.radius < paddle.y + paddle.height;
+
+  if ( !( withinX && withinY && ball.dy > 0 ) ) return;
+
+  const paddleCenter = paddle.x + paddle.width / 2;
+  const hitOffset = ( ball.x - paddleCenter ) / ( paddle.width / 2 );
+  const clampedOffset = Math.max( -1, Math.min( 1, hitOffset ) );
+  const angle = clampedOffset * MAX_BOUNCE_ANGLE;
+  const speed = Math.hypot( ball.dx, ball.dy );
+
+  ball.dx = speed * Math.sin( angle );
+  ball.dy = -speed * Math.cos( angle );
+  ball.y = paddle.y - ball.radius;
+}
+
+const BRICK_COLS = 8;
+const BRICK_ROWS = 5;
+const BRICK_WIDTH = 80;
+const BRICK_HEIGHT = 24;
+const BRICK_PADDING = 6;
+const BRICK_OFFSET_TOP = 40;
+const BRICK_OFFSET_LEFT = ( canvas.width - ( BRICK_COLS * ( BRICK_WIDTH + BRICK_PADDING ) - BRICK_PADDING ) ) / 2;
+
+const BRICK_COLORS = [ 'red', 'yellow', 'cyan', 'magenta', 'hotpink', 'green', 'gray' ];
+
+let bricks = [];
+
+function createBricks() {
+  bricks = [];
+  for ( let row = 0; row < BRICK_ROWS; row++ ) {
+    for ( let col = 0; col < BRICK_COLS; col++ ) {
+      bricks.push( {
+        x: BRICK_OFFSET_LEFT + col * ( BRICK_WIDTH + BRICK_PADDING ),
+        y: BRICK_OFFSET_TOP + row * ( BRICK_HEIGHT + BRICK_PADDING ),
+        width: BRICK_WIDTH,
+        height: BRICK_HEIGHT,
+        color: BRICK_COLORS[ row % BRICK_COLORS.length ],
+        alive: true,
+      } );
+    }
+  }
+}
+
+createBricks();
+
+const POINTS_PER_BRICK = 10;
+let score = 0;
+
+function checkBrickCollision() {
+  let closestBrick = null;
+  let closestDist = Infinity;
+
+  for ( const brick of bricks ) {
+    if ( !brick.alive ) continue;
+
+    const withinX = ball.x + ball.radius > brick.x && ball.x - ball.radius < brick.x + brick.width;
+    const withinY = ball.y + ball.radius > brick.y && ball.y - ball.radius < brick.y + brick.height;
+    if ( !( withinX && withinY ) ) continue;
+
+    const brickCenterX = brick.x + brick.width / 2;
+    const brickCenterY = brick.y + brick.height / 2;
+    const dist = Math.hypot( ball.x - brickCenterX, ball.y - brickCenterY );
+
+    if ( dist < closestDist ) {
+      closestDist = dist;
+      closestBrick = brick;
+    }
+  }
+
+  if ( !closestBrick ) return;
+
+  closestBrick.alive = false;
+  score += POINTS_PER_BRICK;
+
+  if ( bricks.every( ( brick ) => !brick.alive ) ) {
+    createBricks();
+  }
+
+  const overlapLeft = ( ball.x + ball.radius ) - closestBrick.x;
+  const overlapRight = ( closestBrick.x + closestBrick.width ) - ( ball.x - ball.radius );
+  const overlapTop = ( ball.y + ball.radius ) - closestBrick.y;
+  const overlapBottom = ( closestBrick.y + closestBrick.height ) - ( ball.y - ball.radius );
+
+  const minOverlapX = Math.min( overlapLeft, overlapRight );
+  const minOverlapY = Math.min( overlapTop, overlapBottom );
+
+  if ( minOverlapX < minOverlapY ) {
+    ball.dx *= -1;
+  } else {
+    ball.dy *= -1;
+  }
 }
 
 function update() {
@@ -80,6 +195,18 @@ function render() {
   ctx.clearRect( 0, 0, canvas.width, canvas.height );
   drawSprite( ctx, 'paddle', paddle.x, paddle.y, paddle.width, paddle.height );
   drawSprite( ctx, 'ball', ball.x - ball.radius, ball.y - ball.radius, ball.radius * 2, ball.radius * 2 );
+  bricks.forEach( ( brick ) => {
+    if ( !brick.alive ) return;
+    drawSprite( ctx, `block_${ brick.color }`, brick.x, brick.y, brick.width, brick.height );
+  } );
+
+  ctx.fillStyle = '#fff';
+  ctx.font = '16px sans-serif';
+  ctx.textBaseline = 'top';
+  ctx.fillText( `Puntaje: ${ score }`, 10, 10 );
+  ctx.textAlign = 'right';
+  ctx.fillText( `Vidas: ${ lives }`, canvas.width - 10, 10 );
+  ctx.textAlign = 'left';
 }
 
 function loop() {
