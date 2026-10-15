@@ -204,9 +204,14 @@ function render() {
   ctx.font = '16px sans-serif';
   ctx.textBaseline = 'top';
   ctx.fillText( `Puntaje: ${ score }`, 10, 10 );
-  ctx.textAlign = 'right';
-  ctx.fillText( `Vidas: ${ lives }`, canvas.width - 10, 10 );
-  ctx.textAlign = 'left';
+
+  const lifeIconSize = 16;
+  const lifeIconGap = 6;
+  let lifeIconX = canvas.width - 10 - lifeIconSize;
+  for ( let i = 0; i < lives; i++ ) {
+    drawSprite( ctx, 'ball', lifeIconX, 10, lifeIconSize, lifeIconSize );
+    lifeIconX -= lifeIconSize + lifeIconGap;
+  }
 }
 
 function loop() {
