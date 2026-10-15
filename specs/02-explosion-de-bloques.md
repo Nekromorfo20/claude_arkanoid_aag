@@ -1,6 +1,6 @@
 # Spec 02 — Explosión de bloques
 
-**Estado:** Draft
+**Estado:** Aprobado
 **Depende de:** SPEC 01
 **Fecha:** 2026-10-15
 
@@ -44,13 +44,13 @@ El array `bricks` (de Spec 01) no cambia de forma; al detectar colisión, el bri
 
 ## Criterios de aceptación
 
-- [ ] Al golpear un bloque, este deja de colisionar con la pelota inmediatamente (la pelota no rebota contra un bloque "en explosión").
-- [ ] Al golpear un bloque, se reproducen visualmente los 4 frames de su animación de explosión (`EXPLOSION_FRAMES[color]`) en la posición del bloque.
-- [ ] La animación de un bloque dura aproximadamente 150ms (`EXPLOSION_DURATION`) y luego desaparece por completo de la pantalla.
-- [ ] El puntaje se suma en el momento del impacto, sin esperar a que termine la animación.
-- [ ] Si se rompe el último bloque del grid, el grid completo no se regenera hasta que la animación de explosión de ese bloque haya terminado.
-- [ ] No hay errores de consola ni bloques "fantasma" (bloques que ya no deberían colisionar pero siguen bloqueando la pelota).
-- [ ] No se modifica `assets/spritesheet.js`; se reutiliza tal cual (`drawFrame`, `EXPLOSION_FRAMES`, `EXPLOSION_DURATION`).
+- [X] Al golpear un bloque, este deja de colisionar con la pelota inmediatamente (la pelota no rebota contra un bloque "en explosión").
+- [X] Al golpear un bloque, se reproducen visualmente los 4 frames de su animación de explosión (`EXPLOSION_FRAMES[color]`) en la posición del bloque.
+- [X] La animación de un bloque dura aproximadamente 150ms (`EXPLOSION_DURATION`) y luego desaparece por completo de la pantalla.
+- [X] El puntaje se suma en el momento del impacto, sin esperar a que termine la animación.
+- [X] Si se rompe el último bloque del grid, el grid completo no se regenera hasta que la animación de explosión de ese bloque haya terminado.
+- [X] No hay errores de consola ni bloques "fantasma" (bloques que ya no deberían colisionar pero siguen bloqueando la pelota).
+- [X] No se modifica `assets/spritesheet.js`; se reutiliza tal cual (`drawFrame`, `EXPLOSION_FRAMES`, `EXPLOSION_DURATION`).
 
 ## Decisiones tomadas y descartadas
 

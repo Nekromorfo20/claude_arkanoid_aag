@@ -139,6 +139,8 @@ createBricks();
 const POINTS_PER_BRICK = 10;
 let score = 0;
 
+let explosions = [];
+
 function checkBrickCollision() {
   let closestBrick = null;
   let closestDist = Infinity;
@@ -165,9 +167,14 @@ function checkBrickCollision() {
   closestBrick.alive = false;
   score += POINTS_PER_BRICK;
 
-  if ( bricks.every( ( brick ) => !brick.alive ) ) {
-    createBricks();
-  }
+  explosions.push( {
+    x: closestBrick.x,
+    y: closestBrick.y,
+    width: closestBrick.width,
+    height: closestBrick.height,
+    color: closestBrick.color,
+    startTime: performance.now(),
+  } );
 
   const overlapLeft = ( ball.x + ball.radius ) - closestBrick.x;
   const overlapRight = ( closestBrick.x + closestBrick.width ) - ( ball.x - ball.radius );
@@ -184,11 +191,20 @@ function checkBrickCollision() {
   }
 }
 
+function updateExplosions() {
+  explosions = explosions.filter( ( explosion ) => performance.now() - explosion.startTime < EXPLOSION_DURATION );
+
+  if ( explosions.length === 0 && bricks.every( ( brick ) => !brick.alive ) ) {
+    createBricks();
+  }
+}
+
 function update() {
   if ( keys.left ) paddle.x -= PADDLE_SPEED;
   if ( keys.right ) paddle.x += PADDLE_SPEED;
   clampPaddle();
   updateBall();
+  updateExplosions();
 }
 
 function render() {
@@ -198,6 +214,11 @@ function render() {
   bricks.forEach( ( brick ) => {
     if ( !brick.alive ) return;
     drawSprite( ctx, `block_${ brick.color }`, brick.x, brick.y, brick.width, brick.height );
+  } );
+
+  explosions.forEach( ( explosion ) => {
+    const frameIndex = Math.min( 3, Math.floor( ( performance.now() - explosion.startTime ) / ( EXPLOSION_DURATION / 4 ) ) );
+    drawFrame( ctx, EXPLOSION_FRAMES[ explosion.color ][ frameIndex ], explosion.x, explosion.y, explosion.width, explosion.height );
   } );
 
   ctx.fillStyle = '#fff';
