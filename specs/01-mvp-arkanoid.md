@@ -1,6 +1,6 @@
 # Spec 01 — MVP Arkanoid
 
-**Estado:** Draft
+**Estado:** Aprobado
 **Depende de:** Ninguna
 **Fecha:** 2026-10-08
 
