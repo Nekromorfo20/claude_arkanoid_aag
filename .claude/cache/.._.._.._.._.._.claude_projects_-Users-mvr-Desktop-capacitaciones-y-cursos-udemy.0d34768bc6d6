@@ -1,0 +1,15 @@
+---
+name: feedback-responder-en-espanol
+description: El usuario quiere que todas las respuestas en este proyecto sean en español
+metadata: 
+  node_type: memory
+  type: feedback
+  originSessionId: 0a0848e2-8715-4c79-ae61-dc4df67300a6
+  modified: 2026-10-08T17:47:51.646Z
+---
+
+Responder siempre en español en este proyecto, independientemente del idioma en que esté escrito el código o la documentación existente (el README y parte del código ya están en español/inglés mixto).
+
+**Why:** El usuario lo pidió explícitamente como preferencia general de comunicación para este repo.
+
+**How to apply:** Usar español en todo el texto dirigido al usuario (explicaciones, resúmenes, preguntas) en este directorio de trabajo. Esto no implica traducir código, nombres de archivos, ni contenido técnico que deba permanecer en inglés por convención (identificadores, mensajes de commit si no se indica lo contrario, etc.).
