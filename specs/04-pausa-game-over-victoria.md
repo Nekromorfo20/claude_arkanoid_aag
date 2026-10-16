@@ -1,6 +1,6 @@
 # Spec 04 — Pausa, Game Over y Victoria
 
-**Estado:** Draft
+**Estado:** Aprobado
 **Depende de:** SPEC 01, SPEC 02, SPEC 03
 **Fecha:** 2026-10-16
 

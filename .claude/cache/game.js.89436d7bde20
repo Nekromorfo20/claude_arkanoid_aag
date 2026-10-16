@@ -27,9 +27,20 @@ const keys = {
   right: false,
 };
 
+let gameState = 'playing';
+
 document.addEventListener( 'keydown', ( e ) => {
   if ( e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A' ) keys.left = true;
   if ( e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D' ) keys.right = true;
+
+  if ( e.key === 'p' || e.key === 'P' ) {
+    if ( gameState === 'playing' ) gameState = 'paused';
+    else if ( gameState === 'paused' ) gameState = 'playing';
+  }
+
+  if ( e.key === 'Enter' ) {
+    if ( gameState === 'gameover' || gameState === 'victory' ) restartGame();
+  }
 } );
 
 document.addEventListener( 'keyup', ( e ) => {
@@ -38,6 +49,8 @@ document.addEventListener( 'keyup', ( e ) => {
 } );
 
 canvas.addEventListener( 'mousemove', ( e ) => {
+  if ( gameState !== 'playing' ) return;
+
   const rect = canvas.getBoundingClientRect();
   const mouseX = e.clientX - rect.left;
   paddle.x = mouseX - paddle.width / 2;
@@ -101,8 +114,11 @@ function updateBall() {
 
   if ( ball.y - ball.radius > canvas.height ) {
     lives -= 1;
-    if ( lives <= 0 ) lives = 3;
-    resetBall();
+    if ( lives <= 0 ) {
+      gameState = 'gameover';
+    } else {
+      resetBall();
+    }
   }
 }
 
@@ -271,12 +287,29 @@ function updateExplosions() {
   explosions = explosions.filter( ( explosion ) => performance.now() - explosion.startTime < EXPLOSION_DURATION );
 
   if ( explosions.length === 0 && bricks.every( ( brick ) => !brick.alive ) ) {
-    currentLevel = currentLevel >= LEVELS.length ? 1 : currentLevel + 1;
-    createBricks();
+    if ( currentLevel >= LEVELS.length ) {
+      gameState = 'victory';
+    } else {
+      currentLevel += 1;
+      createBricks();
+    }
   }
 }
 
+function restartGame() {
+  lives = 3;
+  score = 0;
+  currentLevel = 1;
+  createBricks();
+  explosions = [];
+  paddle.x = ( canvas.width - PADDLE_WIDTH ) / 2;
+  resetBall();
+  gameState = 'playing';
+}
+
 function update() {
+  if ( gameState !== 'playing' ) return;
+
   if ( keys.left ) paddle.x -= PADDLE_SPEED;
   if ( keys.right ) paddle.x += PADDLE_SPEED;
   clampPaddle();
@@ -310,6 +343,38 @@ function render() {
   for ( let i = 0; i < lives; i++ ) {
     drawSprite( ctx, 'ball', lifeIconX, 10, lifeIconSize, lifeIconSize );
     lifeIconX -= lifeIconSize + lifeIconGap;
+  }
+
+  if ( gameState === 'paused' ) {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+    ctx.fillRect( 0, 0, canvas.width, canvas.height );
+
+    ctx.fillStyle = '#fff';
+    ctx.font = '48px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText( 'PAUSA', canvas.width / 2, canvas.height / 2 );
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+  }
+
+  if ( gameState === 'gameover' || gameState === 'victory' ) {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+    ctx.fillRect( 0, 0, canvas.width, canvas.height );
+
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    ctx.font = '48px sans-serif';
+    ctx.fillText( gameState === 'gameover' ? 'GAME OVER' : 'VICTORIA', canvas.width / 2, canvas.height / 2 - 40 );
+
+    ctx.font = '24px sans-serif';
+    ctx.fillText( `Puntaje: ${ score }`, canvas.width / 2, canvas.height / 2 + 10 );
+    ctx.fillText( 'Presioná Enter para reiniciar', canvas.width / 2, canvas.height / 2 + 44 );
+
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
   }
 }
 
