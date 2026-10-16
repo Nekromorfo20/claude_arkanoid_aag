@@ -1,6 +1,15 @@
 const canvas = document.getElementById( 'gameCanvas' );
 const ctx = canvas.getContext( '2d' );
 
+const SOUNDS = {
+  ballBounce: 'assets/sounds/ball-bounce.mp3',
+  brickBreak: 'assets/sounds/break-sound.mp3',
+};
+
+function playSound( src ) {
+  new Audio( src ).play();
+}
+
 const PADDLE_WIDTH = 100;
 const PADDLE_HEIGHT = 14;
 
@@ -43,6 +52,12 @@ function clampPaddle() {
 const BALL_RADIUS = 8;
 const BALL_SPEED = 5;
 
+let currentLevel = 1;
+
+function currentLevelSpeed() {
+  return BALL_SPEED * LEVELS[ currentLevel - 1 ].speedMultiplier;
+}
+
 const ball = {
   x: canvas.width / 2,
   y: paddle.y - BALL_RADIUS,
@@ -54,10 +69,11 @@ const ball = {
 let lives = 3;
 
 function resetBall() {
+  const speed = currentLevelSpeed();
   ball.x = canvas.width / 2;
   ball.y = paddle.y - ball.radius;
-  ball.dx = BALL_SPEED;
-  ball.dy = -BALL_SPEED;
+  ball.dx = speed;
+  ball.dy = -speed;
 }
 
 function updateBall() {
@@ -67,14 +83,17 @@ function updateBall() {
   if ( ball.x - ball.radius < 0 ) {
     ball.x = ball.radius;
     ball.dx *= -1;
+    playSound( SOUNDS.ballBounce );
   } else if ( ball.x + ball.radius > canvas.width ) {
     ball.x = canvas.width - ball.radius;
     ball.dx *= -1;
+    playSound( SOUNDS.ballBounce );
   }
 
   if ( ball.y - ball.radius < 0 ) {
     ball.y = ball.radius;
     ball.dy *= -1;
+    playSound( SOUNDS.ballBounce );
   }
 
   checkPaddleCollision();
@@ -104,6 +123,7 @@ function checkPaddleCollision() {
   ball.dx = speed * Math.sin( angle );
   ball.dy = -speed * Math.cos( angle );
   ball.y = paddle.y - ball.radius;
+  playSound( SOUNDS.ballBounce );
 }
 
 const BRICK_COLS = 8;
@@ -116,18 +136,73 @@ const BRICK_OFFSET_LEFT = ( canvas.width - ( BRICK_COLS * ( BRICK_WIDTH + BRICK_
 
 const BRICK_COLORS = [ 'red', 'yellow', 'cyan', 'magenta', 'hotpink', 'green', 'gray' ];
 
+const LEVEL_SPEED_STEP = 0.15;
+
+function levelSpeedMultiplier( level ) {
+  return 1 + LEVEL_SPEED_STEP * ( level - 1 );
+}
+
+const LEVELS = [
+  {
+    // Nivel 1: grid completo, todas las filas.
+    grid: Array.from( { length: BRICK_ROWS }, ( _, row ) =>
+      Array.from( { length: BRICK_COLS }, () => BRICK_COLORS[ row % BRICK_COLORS.length ] )
+    ),
+    speedMultiplier: levelSpeedMultiplier( 1 ),
+  },
+  {
+    // Nivel 2: patrón en damero (huecos alternados).
+    grid: Array.from( { length: BRICK_ROWS }, ( _, row ) =>
+      Array.from( { length: BRICK_COLS }, ( _, col ) =>
+        ( row + col ) % 2 === 0 ? BRICK_COLORS[ row % BRICK_COLORS.length ] : null
+      )
+    ),
+    speedMultiplier: levelSpeedMultiplier( 2 ),
+  },
+  {
+    // Nivel 3: columnas pares huecas.
+    grid: Array.from( { length: BRICK_ROWS }, ( _, row ) =>
+      Array.from( { length: BRICK_COLS }, ( _, col ) =>
+        col % 2 === 0 ? null : BRICK_COLORS[ ( row + 2 ) % BRICK_COLORS.length ]
+      )
+    ),
+    speedMultiplier: levelSpeedMultiplier( 3 ),
+  },
+  {
+    // Nivel 4: forma de diamante (huecos en las esquinas de cada fila).
+    grid: Array.from( { length: BRICK_ROWS }, ( _, row ) => {
+      const distFromCenter = Math.abs( row - ( BRICK_ROWS - 1 ) / 2 );
+      const margin = Math.round( distFromCenter );
+      return Array.from( { length: BRICK_COLS }, ( _, col ) =>
+        col < margin || col >= BRICK_COLS - margin ? null : BRICK_COLORS[ ( row + 4 ) % BRICK_COLORS.length ]
+      );
+    } ),
+    speedMultiplier: levelSpeedMultiplier( 4 ),
+  },
+  {
+    // Nivel 5: grid completo con colores invertidos (más difícil de leer, misma dimensión).
+    grid: Array.from( { length: BRICK_ROWS }, ( _, row ) =>
+      Array.from( { length: BRICK_COLS }, () => BRICK_COLORS[ ( BRICK_ROWS - 1 - row ) % BRICK_COLORS.length ] )
+    ),
+    speedMultiplier: levelSpeedMultiplier( 5 ),
+  },
+];
+
 let bricks = [];
 
 function createBricks() {
   bricks = [];
-  for ( let row = 0; row < BRICK_ROWS; row++ ) {
-    for ( let col = 0; col < BRICK_COLS; col++ ) {
+  const grid = LEVELS[ currentLevel - 1 ].grid;
+  for ( let row = 0; row < grid.length; row++ ) {
+    for ( let col = 0; col < grid[ row ].length; col++ ) {
+      const color = grid[ row ][ col ];
+      if ( color === null ) continue;
       bricks.push( {
         x: BRICK_OFFSET_LEFT + col * ( BRICK_WIDTH + BRICK_PADDING ),
         y: BRICK_OFFSET_TOP + row * ( BRICK_HEIGHT + BRICK_PADDING ),
         width: BRICK_WIDTH,
         height: BRICK_HEIGHT,
-        color: BRICK_COLORS[ row % BRICK_COLORS.length ],
+        color: color,
         alive: true,
       } );
     }
@@ -166,6 +241,7 @@ function checkBrickCollision() {
 
   closestBrick.alive = false;
   score += POINTS_PER_BRICK;
+  playSound( SOUNDS.brickBreak );
 
   explosions.push( {
     x: closestBrick.x,
@@ -195,6 +271,7 @@ function updateExplosions() {
   explosions = explosions.filter( ( explosion ) => performance.now() - explosion.startTime < EXPLOSION_DURATION );
 
   if ( explosions.length === 0 && bricks.every( ( brick ) => !brick.alive ) ) {
+    currentLevel = currentLevel >= LEVELS.length ? 1 : currentLevel + 1;
     createBricks();
   }
 }
@@ -225,6 +302,7 @@ function render() {
   ctx.font = '16px sans-serif';
   ctx.textBaseline = 'top';
   ctx.fillText( `Puntaje: ${ score }`, 10, 10 );
+  ctx.fillText( `Nivel: ${ currentLevel }`, 10, 32 );
 
   const lifeIconSize = 16;
   const lifeIconGap = 6;

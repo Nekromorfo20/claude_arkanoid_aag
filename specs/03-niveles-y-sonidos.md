@@ -1,6 +1,6 @@
 # Spec 03 — Niveles y sonidos
 
-**Estado:** Draft
+**Estado:** Aprobado
 **Depende de:** SPEC 01, SPEC 02
 **Fecha:** 2026-10-16
 
